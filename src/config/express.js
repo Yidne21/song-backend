@@ -18,9 +18,6 @@ app.use(cors());
 
 app.use('/api', routes);
 
-//TODO: Catch unknown endpoints and throw a 404 error
-
-// Catch errors passed from controllers
 app.use((err, req, res, next) => {
   if (!(err instanceof APIError)) {
     const error = new APIError(

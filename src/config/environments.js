@@ -9,7 +9,6 @@ const environmentSchema = Joi.object({
     .default('development'),
   MONGO_URL: Joi.string().required().description('Mongo DB URL is required'),
   PORT: Joi.number().default(5000),
-  JWT_KEY: Joi.string().required('JWT Key is required'),
 })
   .unknown()
   .required();
@@ -24,4 +23,3 @@ if (error) {
 export const NODE_ENV = value.NODE_ENV;
 export const MONGO_URL = value.MONGO_URL;
 export const PORT = value.PORT;
-export const JWT_KEY = value.JWT_KEY;
