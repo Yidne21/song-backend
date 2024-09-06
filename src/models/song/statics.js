@@ -5,6 +5,7 @@ import APIError from '../../errors/APIError';
 import { modelNames } from '../../utils/constants';
 import Song from '.';
 import { paginationPipeline } from '../../utils';
+
 export async function getSingleSong(id) {
   const SongModel = this.model(modelNames.songs);
   try {
@@ -93,10 +94,166 @@ export async function getAllSongs({
           createdAt: -1,
         },
       },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          artist: 1,
+          genre: 1,
+          album: 1,
+        },
+      },
       ...paginationPipeline(skip, limit),
     ]);
     return songs[0];
   } catch (error) {
+    if (error instanceof APIError) throw error;
+    else {
+      throw new APIError('Internal Error', httpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+}
+
+export async function getMainStats() {
+  try {
+    const stats = await Song.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalSongs: { $sum: 1 },
+          uniqueArtists: { $addToSet: '$artist' },
+          uniqueAlbums: { $addToSet: '$album' },
+          uniqueGenres: { $addToSet: '$genre' },
+        },
+      },
+      {
+        $project: {
+          totalSongs: 1,
+          totalArtists: { $size: '$uniqueArtists' },
+          totalAlbums: { $size: '$uniqueAlbums' },
+          totalGenres: { $size: '$uniqueGenres' },
+        },
+      },
+    ]);
+
+    return stats.length
+      ? stats[0]
+      : { totalSongs: 0, totalArtists: 0, totalAlbums: 0, totalGenres: 0 }; // Return default if no data
+  } catch (error) {
+    if (error instanceof APIError) throw error;
+    else {
+      throw new APIError('Internal Error', httpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+}
+
+export async function songsPerGenres() {
+  try {
+    let stats = await Song.aggregate([
+      {
+        $group: {
+          _id: '$genre',
+          numberOfSongs: { $sum: 1 },
+        },
+      },
+      {
+        $sort: {
+          numberOfSongs: -1,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          genre: '$_id',
+          numberOfSongs: 1,
+        },
+      },
+    ]);
+
+    stats = stats.map((item, index) => ({
+      id: index + 1,
+      genre: item.genre,
+      value: item.numberOfSongs,
+    }));
+
+    return stats;
+  } catch (error) {
+    console.log(error);
+    if (error instanceof APIError) throw error;
+    else {
+      throw new APIError('Internal Error', httpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+}
+
+export async function songsPerAlbums() {
+  try {
+    let stats = await Song.aggregate([
+      {
+        $group: {
+          _id: '$album',
+          numberOfSongs: { $sum: 1 },
+        },
+      },
+      {
+        $sort: {
+          numberOfSongs: -1,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          album: '$_id',
+          numberOfSongs: 1,
+        },
+      },
+    ]);
+
+    stats = stats.map((item, index) => ({
+      id: index + 1,
+      label: item.album,
+      value: item.numberOfSongs,
+    }));
+
+    return stats;
+  } catch (error) {
+    console.log(error);
+    if (error instanceof APIError) throw error;
+    else {
+      throw new APIError('Internal Error', httpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+}
+
+export async function songsAndAlbumsPerArtist({ skip = 1, limit = 5 }) {
+  try {
+    const stats = await Song.aggregate([
+      {
+        $group: {
+          _id: '$artist',
+          numberOfSongs: { $sum: 1 },
+          uniqueAlbums: { $addToSet: '$album' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          artist: '$_id',
+          numberOfSongs: 1,
+          numberOfAlbums: { $size: '$uniqueAlbums' },
+        },
+      },
+      {
+        $sort: {
+          numberOfSongs: -1,
+        },
+      },
+      ...paginationPipeline(skip, limit),
+    ]);
+
+    return stats[0];
+  } catch (error) {
+    console.log(error);
     if (error instanceof APIError) throw error;
     else {
       throw new APIError('Internal Error', httpStatus.INTERNAL_SERVER_ERROR);

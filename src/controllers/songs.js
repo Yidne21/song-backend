@@ -1,6 +1,5 @@
 import httpStatus from 'http-status';
 import Song from '../models/song';
-import { deleteSong, getAllSongs, updateSong } from '../models/song/statics';
 
 export const getSingleSongController = async (req, res, next) => {
   const { id } = req.params;
@@ -33,7 +32,7 @@ export const deleteSongController = async (req, res, next) => {
   const { id } = req.params;
 
   try {
-    const message = await deleteSong(id);
+    const message = await Song.deleteSong(id);
     res.status(httpStatus.OK).json(message);
   } catch (error) {
     next(error);
@@ -51,7 +50,7 @@ export const updateSongController = async (req, res, next) => {
   };
 
   try {
-    await updateSong(id, updates);
+    await Song.updateSong(id, updates);
     res.status(httpStatus.OK).json({ message: 'Song Updated!!' });
   } catch (error) {
     next(error);
@@ -69,8 +68,49 @@ export const getAllSongsController = async (req, res, next) => {
     album,
   };
   try {
-    const songs = await getAllSongs(filters);
+    const songs = await Song.getAllSongs(filters);
     res.status(httpStatus.OK).json(songs);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const mainStatsController = async (req, res, next) => {
+  try {
+    const stats = await Song.getMainStats();
+    res.status(httpStatus.OK).json(stats);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const songsPerGenresController = async (req, res, next) => {
+  try {
+    const stats = await Song.songsPerGenres();
+    res.status(httpStatus.OK).json(stats);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const songsPerAlbumsController = async (req, res, next) => {
+  try {
+    const stats = await Song.songsPerAlbums();
+    res.status(httpStatus.OK).json(stats);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const songsPerArtistsController = async (req, res, next) => {
+  const { skip, limit } = req.query;
+  const filters = {
+    skip,
+    limit,
+  };
+  try {
+    const stats = await Song.songsAndAlbumsPerArtist(filters);
+    res.status(httpStatus.OK).json(stats);
   } catch (error) {
     next(error);
   }
