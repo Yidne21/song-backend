@@ -136,9 +136,14 @@ export async function getMainStats() {
       },
     ]);
 
-    return stats.length
-      ? stats[0]
-      : { totalSongs: 0, totalArtists: 0, totalAlbums: 0, totalGenres: 0 }; // Return default if no data
+    const formattedStats = [
+      { title: 'Songs', stat: stats.length ? stats[0].totalSongs : 0 },
+      { title: 'Artists', stat: stats.length ? stats[0].totalArtists : 0 },
+      { title: 'Albums', stat: stats.length ? stats[0].totalAlbums : 0 },
+      { title: 'Genres', stat: stats.length ? stats[0].totalGenres : 0 },
+    ];
+
+    return formattedStats;
   } catch (error) {
     if (error instanceof APIError) throw error;
     else {
@@ -172,13 +177,12 @@ export async function songsPerGenres() {
 
     stats = stats.map((item, index) => ({
       id: index + 1,
-      genre: item.genre,
+      label: item.genre,
       value: item.numberOfSongs,
     }));
 
     return stats;
   } catch (error) {
-    console.log(error);
     if (error instanceof APIError) throw error;
     else {
       throw new APIError('Internal Error', httpStatus.INTERNAL_SERVER_ERROR);
@@ -217,7 +221,6 @@ export async function songsPerAlbums() {
 
     return stats;
   } catch (error) {
-    console.log(error);
     if (error instanceof APIError) throw error;
     else {
       throw new APIError('Internal Error', httpStatus.INTERNAL_SERVER_ERROR);
@@ -231,21 +234,21 @@ export async function songsAndAlbumsPerArtist({ skip = 1, limit = 5 }) {
       {
         $group: {
           _id: '$artist',
-          numberOfSongs: { $sum: 1 },
+          songs: { $sum: 1 },
           uniqueAlbums: { $addToSet: '$album' },
         },
       },
       {
         $project: {
           _id: 0,
-          artist: '$_id',
-          numberOfSongs: 1,
-          numberOfAlbums: { $size: '$uniqueAlbums' },
+          name: '$_id',
+          songs: 1,
+          albums: { $size: '$uniqueAlbums' },
         },
       },
       {
         $sort: {
-          numberOfSongs: -1,
+          songs: -1,
         },
       },
       ...paginationPipeline(skip, limit),
@@ -253,7 +256,6 @@ export async function songsAndAlbumsPerArtist({ skip = 1, limit = 5 }) {
 
     return stats[0];
   } catch (error) {
-    console.log(error);
     if (error instanceof APIError) throw error;
     else {
       throw new APIError('Internal Error', httpStatus.INTERNAL_SERVER_ERROR);
