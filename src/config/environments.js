@@ -8,7 +8,7 @@ const environmentSchema = Joi.object({
     .allow('development', 'production')
     .default('development'),
   MONGO_URL: Joi.string().required().description('Mongo DB URL is required'),
-  PORT: Joi.number().default(5000),
+  PORT: Joi.number().default(5500),
 })
   .unknown()
   .required();
